@@ -67,7 +67,7 @@
   bottom: calc(100% - 8px);
   left: 24px;
   z-index: 2;
-  width: min(360px, calc(100% - 48px));
+  width: min(560px, calc(100% - 48px));
   margin: 0;
   padding: 4px 0;
   list-style: none;
@@ -98,11 +98,11 @@
   width: 18px;
   height: 18px;
 }
+/* Long names differ at the end (`-agent-1`, `-agent-10`), so they wrap instead of truncating. */
 .ops-mention-name {
-  overflow: hidden;
+  min-width: 0;
   font-weight: 500;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 .ops-mention-list small {
   margin-left: auto;
