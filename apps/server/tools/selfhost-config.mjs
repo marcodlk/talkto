@@ -34,8 +34,8 @@ const name = setting(
 );
 const origin = setting(
   "TALKTO_SERVICE_ORIGIN",
-  /^https:\/\/[a-z0-9.-]+$/,
-  "Your TalkTo's https address with no path or trailing slash, for example https://talkto.example.com.",
+  /^(https:\/\/[a-z0-9.-]+|http:\/\/localhost:[0-9]{2,5})$/,
+  "Your TalkTo's https address with no path or trailing slash, for example https://talkto.example.com, or http://localhost:<port> when people reach it through a tunnel.",
 );
 const databaseId = setting(
   "TALKTO_D1_DATABASE_ID",
