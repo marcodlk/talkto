@@ -58,7 +58,59 @@
 .ops-composer {
   display: grid;
   gap: 8px;
+  position: relative;
   padding: 12px 24px 16px;
+}
+/* Names to @mention, over the conversation just above the composer, in a channel. */
+.ops-mention-list {
+  position: absolute;
+  bottom: calc(100% - 8px);
+  left: 24px;
+  z-index: 2;
+  width: min(360px, calc(100% - 48px));
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: 2px 2px 0 var(--line);
+}
+.ops-mention-list[hidden] {
+  display: none;
+}
+.ops-mention-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+.ops-mention-list li[aria-selected="true"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.ops-mention-mark {
+  display: inline-flex;
+  flex: none;
+}
+.ops-mention-list .agent-icon {
+  width: 18px;
+  height: 18px;
+}
+.ops-mention-name {
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ops-mention-list small {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 12px;
+}
+.ops-mention-list li[aria-selected="true"] small {
+  color: inherit;
 }
 .ops-composer textarea {
   width: 100%;

@@ -1,6 +1,7 @@
 import { queryOptions, skipToken } from "@tanstack/react-query";
 import { Schema } from "effect";
 import * as P from "@talkto/api/platform";
+import * as I from "@talkto/api/inputs";
 import type * as M from "@talkto/api/models";
 import { input, request, type Client } from "./api.js";
 
@@ -65,6 +66,30 @@ export function starterQuery(api: Client, userId: P.UserId, accountId: P.Account
       request(
         api.starter.state({
           params: input(Schema.Struct({ accountId: P.AccountId }), { accountId }),
+        }),
+        signal,
+      ),
+  });
+}
+
+/**
+ * A server's active participants, a page of up to 100 in name order, or those whose name, agent
+ * type or working directory contains `query`. The composer's @mention picker reads it.
+ */
+export function participantsQuery(
+  api: Client,
+  userId: P.UserId,
+  accountId: P.AccountId,
+  serverId: M.ServerId,
+  query?: string,
+) {
+  return queryOptions({
+    queryKey: ["human", userId, accountId, serverId, "participants", query ?? null],
+    queryFn: ({ signal }) =>
+      request(
+        api.server.listParticipants({
+          params: { serverId },
+          query: input(I.ListParticipants, { query, limit: 100 }),
         }),
         signal,
       ),

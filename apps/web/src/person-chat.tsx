@@ -14,6 +14,7 @@ import type * as P from "@talkto/api/platform";
 import * as M from "@talkto/api/models";
 import { ApiError, request } from "./api.js";
 import { PersonMark } from "./components.js";
+import { useMentionPicker } from "./mention-list.js";
 import { useHuman, useServices } from "./session.js";
 import { useServerPath } from "./server-path.js";
 import "./person-chat.css";
@@ -162,7 +163,6 @@ export type ComposerTarget =
       readonly name: M.Name;
       /** The person's own participant, or null until their first post here creates it. */
       readonly self: M.Participant | null;
-      readonly accountId: P.AccountId;
     };
 
 /**
@@ -172,12 +172,14 @@ export type ComposerTarget =
  * twice.
  */
 export function PersonComposer({
+  accountId,
   serverId,
   conversationId,
   target,
   delivered,
   onSent,
 }: {
+  readonly accountId: P.AccountId;
   readonly serverId: M.ServerId;
   readonly conversationId: M.ConversationId;
   readonly target: ComposerTarget;
@@ -195,7 +197,7 @@ export function PersonComposer({
   const join = async () => {
     if (target.kind !== "channel" || target.self !== null) return;
     await request(api.server.joinAsPerson({ params: { serverId } }));
-    void cache.invalidateQueries({ queryKey: personKey(user.id, target.accountId, serverId) });
+    void cache.invalidateQueries({ queryKey: personKey(user.id, accountId, serverId) });
   };
   const [text, setText] = useState("");
   const [urgent, setUrgent] = useState(false);
@@ -203,6 +205,15 @@ export function PersonComposer({
   const [outbox, setOutbox] = useState<ReadonlyArray<Outgoing>>([]);
   const field = useRef<HTMLTextAreaElement>(null);
   const hint = useId();
+  const mention = useMentionPicker({
+    enabled: target.kind === "channel",
+    accountId,
+    serverId,
+    self: target.kind === "channel" ? (target.self?.id ?? null) : null,
+    field,
+    text,
+    setText,
+  });
   const update = (key: M.RequestKey, change: Partial<Outgoing>) =>
     setOutbox((items) =>
       items.map((item) => (item.requestKey === key ? { ...item, ...change } : item)),
@@ -317,16 +328,20 @@ export function PersonComposer({
           aria-label={label}
           aria-describedby={hint}
           aria-invalid={invalid !== null || undefined}
+          {...mention.textarea}
           onChange={(event) => {
             setText(event.target.value);
+            mention.track(event.target);
             if (invalid) setInvalid(null);
           }}
           onKeyDown={(event) => {
+            if (mention.onKeyDown(event)) return;
             if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
             event.preventDefault();
             submit();
           }}
         />
+        {mention.list}
         <div className="ops-composer-bar">
           {target.kind === "direct" ? (
             <label
@@ -399,6 +414,7 @@ export function ConversationFooter({
     return (
       <PersonComposer
         key={conversation.id}
+        accountId={accountId}
         serverId={serverId}
         conversationId={conversation.id}
         target={{ kind: "direct", agent }}
@@ -416,13 +432,13 @@ export function ConversationFooter({
     return (
       <PersonComposer
         key={conversation.id}
+        accountId={accountId}
         serverId={serverId}
         conversationId={conversation.id}
         target={{
           kind: "channel",
           name: conversation.name,
           self: person.participant,
-          accountId,
         }}
         delivered={delivered}
         onSent={onSent}

@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { createServer as createVite } from "vite";
 
 /*
@@ -145,4 +147,36 @@ test("the picker moves, wraps, picks and stays dismissed on the same token", asy
   );
   // Moving with nothing open changes nothing.
   assert.deepEqual(run([down(), up(), { type: "dismiss" }]), closedPicker);
+});
+
+test("the options are a listbox naming each participant and whether it is an agent or a person", async (t) => {
+  const { MentionList } = await load(t, "/src/mention-list.tsx");
+  const agent = (id, name) => ({ id, name, agentType: "codex" });
+  const person = (id, name) => ({ id, name, agentType: "person", kind: "person" });
+  const render = (options, active) =>
+    renderToStaticMarkup(
+      createElement(MentionList, {
+        id: "mentions",
+        options,
+        active,
+        optionId: (index) => `mentions-${index}`,
+        onHover: () => {},
+        onPick: () => {},
+      }),
+    );
+  const html = render([agent("a", "Atlas"), person("b", "Ana")], 1);
+  assert.match(html, /<ul id="mentions" role="listbox" aria-label="Mention"/);
+  const items = [
+    ...html.matchAll(/<li id="([^"]+)" role="option" aria-selected="(true|false)"[\s\S]*?<\/li>/g),
+  ];
+  assert.deepEqual(
+    items.map(([, id, selected]) => [id, selected]),
+    [
+      ["mentions-0", "false"],
+      ["mentions-1", "true"],
+    ],
+  );
+  assert.match(items[0][0], /Atlas<\/span><small>agent<\/small>/);
+  assert.match(items[1][0], /Ana<\/span><small>person<\/small>/);
+  assert.match(render([], -1), /<ul[^>]*hidden=""/);
 });
